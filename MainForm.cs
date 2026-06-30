@@ -11,7 +11,7 @@ public class MainForm : Form
 {
     readonly Panel content = new() { Dock = DockStyle.Fill }; readonly NaturalSidebarMenuPanel menu = new(); readonly string currentUser, currentRole; readonly Dictionary<string, ModuleDefinition> modules; public MainForm(string user, string role) { currentUser = user; currentRole = role; modules = BuildModules(); Text = "PLF ERP - Analysis Dashboard"; WindowState = FormWindowState.Maximized; MinimumSize = new Size(1320, 860); Font = Theme.DefaultFont; BackColor = Theme.AppBg; Controls.Add(content); Controls.Add(Header()); Controls.Add(Sidebar()); Dashboard(); }
     Control Header() { var h = new Panel { Dock = DockStyle.Top, Height = 74, BackColor = Color.White, Padding = new Padding(24, 14, 24, 14) }; var chip = Theme.Chip(currentRole); chip.Dock = DockStyle.Right; h.Controls.Add(chip); h.Controls.Add(new Label { Text = currentUser, Dock = DockStyle.Right, Width = 170, TextAlign = ContentAlignment.MiddleRight, BackColor = Color.White, ForeColor = Theme.Muted, Font = new Font("Segoe UI", 10, FontStyle.Bold) }); h.Controls.Add(new Label { Text = "Premium Living Furniture ERP", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 19, FontStyle.Bold), BackColor = Color.White, ForeColor = Theme.Text }); return h; }
-    Control Sidebar() { var side = new Panel { Dock = DockStyle.Left, Width = 318, BackColor = Theme.Side }; side.Controls.Add(menu); side.Controls.Add(new Label { Text = "  PLF System", Dock = DockStyle.Top, Height = 72, ForeColor = Color.White, BackColor = Theme.Side, Font = new Font("Segoe UI", 17, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }); AddMenu("Dashboard", Dashboard); AddMenu("Business Analysis", () => SetContent(new AnalysisForm())); AddMenu("Database Health", Health); AddMenu("Data Relationships", Relations); AddMenu("Update Profile", Profile); menu.Controls.Add(new Label { Height = 12, Width = 280, BackColor = Theme.Side }); foreach (var m in modules.Values) if (Security.CanAccess(currentRole, m.TableName)) AddMenu(m.Title, () => Module(m)); AddMenu("Logout", Logout); return side; }
+    Control Sidebar() { var side = new Panel { Dock = DockStyle.Left, Width = 318, BackColor = Theme.Side }; side.Controls.Add(menu); side.Controls.Add(new Label { Text = "  PLF System", Dock = DockStyle.Top, Height = 72, ForeColor = Color.White, BackColor = Theme.Side, Font = new Font("Segoe UI", 17, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft }); AddMenu("Dashboard", Dashboard); AddMenu("Business Analysis", () => SetContent(new AnalysisForm())); AddMenu("Data Relationships", Relations); AddMenu("Update Profile", Profile); menu.Controls.Add(new Label { Height = 12, Width = 280, BackColor = Theme.Side }); foreach (var m in modules.Values) if (Security.CanAccess(currentRole, m.TableName)) AddMenu(m.Title, () => Module(m)); AddMenu("Logout", Logout); return side; }
     void AddMenu(string text, Action action) { var b = new Button { Text = "   " + text, Width = 280, Height = 36, TextAlign = ContentAlignment.MiddleLeft, BackColor = Theme.Side, ForeColor = Color.FromArgb(226, 232, 240), FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 9, FontStyle.Bold), Margin = new Padding(0, 2, 0, 2), Cursor = Cursors.Hand }; b.FlatAppearance.BorderSize = 0; b.MouseEnter += (_, _) => b.BackColor = Theme.Side2; b.MouseLeave += (_, _) => b.BackColor = Theme.Side; b.Click += (_, _) => action(); menu.Controls.Add(b); }
     void SetContent(Control control) { content.Controls.Clear(); control.Dock = DockStyle.Fill; content.Controls.Add(control); }
     TableLayoutPanel Page(string title, string subtitle) { var p = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, BackColor = Theme.AppBg }; p.RowStyles.Add(new RowStyle(SizeType.Absolute, 124)); p.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); p.Controls.Add(new Label { Text = title + Environment.NewLine + subtitle, Dock = DockStyle.Fill, Padding = new Padding(30, 20, 30, 0), Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = Theme.Text, BackColor = Theme.AppBg }, 0, 0); return p; }
@@ -31,6 +31,21 @@ public class MainForm : Form
             if (ef.ShowDialog(this) != DialogResult.OK) return;
             try { Database.AddRecord(module.TableName, ef.Values); reload(); }
             catch (MySql.Data.MySqlClient.MySqlException ex) when (ex.Number == 1062) { MessageBox.Show("This username already exists. Please use another username. No new account was created.", "Duplicate Username"); }
+            return;
+        }
+        if (module.TableName == "Products")
+        {
+            using var pf = new ProductForm();
+            if (pf.ShowDialog(this) != DialogResult.OK) return;
+            reload();
+            return;
+        }
+        if (module.TableName == "Stock")
+        {
+            using var sf = new StockForm();
+            if (sf.ShowDialog(this) != DialogResult.OK) return;
+            Database.AddRecord(module.TableName, sf.Values);
+            reload();
             return;
         }
         if (module.TableName == "Orders") { using var f = new SalesOrderForm(); if (f.ShowDialog(this) != DialogResult.OK) return; Database.AddSalesOrderWithItems(f.OrderNo, f.CustomerId, f.Status, f.OrderDate, f.Priority, f.SalesUserId, f.Items); reload(); return; }
@@ -64,7 +79,7 @@ public class NaturalSidebarMenuPanel : FlowLayoutPanel
     protected override void OnControlAdded(ControlEventArgs e)
     {
         base.OnControlAdded(e);
-        HookMouseWheel(e.Control);
+        if (e.Control != null) HookMouseWheel(e.Control);
         UpdateScrollLimit();
     }
 

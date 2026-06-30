@@ -74,11 +74,8 @@ public class LoginForm : Form
 
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, BackColor = Color.White };
         var login = Theme.PrimaryButton("Login", 125);
-        var check = Theme.SecondaryButton("Check DB", 125);
         login.Click += (_, _) => Login();
-        check.Click += (_, _) => Check();
         buttons.Controls.Add(login);
-        buttons.Controls.Add(check);
         page.Controls.Add(buttons, 0, 2);
 
         return page;
@@ -164,11 +161,6 @@ public class LoginForm : Form
         f.Controls.Add(roleValue);
     }
 
-    void Check()
-    {
-        try { MessageBox.Show(Database.TestConnectionDetailed(), "Database OK"); }
-        catch (Exception ex) { MessageBox.Show(ex.Message); }
-    }
 
     void Login()
     {
