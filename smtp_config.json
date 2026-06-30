@@ -1,0 +1,8 @@
+{
+  "Host": "smtp.gmail.com",
+  "Port": 587,
+  "Username": "plfsystem705@gmail.com",
+  "Password": "frzekbkvmdgpjtsg",
+  "From": "plfsystem705@gmail.com",
+  "EnableSsl": true
+}
